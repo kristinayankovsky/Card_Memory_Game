@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Kristina_Y">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./css/style.css"/>
+    <title>Card Memory Game</title>
+</head>
+<body>
+    <main class="game-container">
+    <h1>Memory Game</h1>
+
+    <div class="controls">
+      <select id="difficulty">
+        <option value="4">Easy (4x4)</option>
+        <option value="6">Hard (6x6)</option>
+      </select>
+      <button id="newGameBtn">New Game</button>
+    </div>
+
+    <div class="stats">
+      <span>Moves: <strong id="moves">0</strong></span>
+      <span>Time: <strong id="time">00:00</strong></span>
+    </div>
+
+    <div id="gameBoard" class="board"></div>
+  </main>
+
+  <script src="./script/script.js"></script>
+</body>
+</html>
