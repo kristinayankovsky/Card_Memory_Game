@@ -1,45 +1,41 @@
 // FRONT CARD (SAME)
 const FRONT_IMAGE = "./assets/images/front_card.jpg";
-//BACK CARD(S)
+// BACK CARD(S)
 const BACK_IMAGES = [
-    "./assets/images/back_card/purple_flower.jpg", //CARD 1
-    "./assets/images/back_card/geese_bird.jpg", //CARD 2
-    "./assets/images/back_card/cherry_blossom.jpg", //CARD 3
-    "./assets/images/back_card/monarch_butterfly.jpg", //CARD 4
-    "./assets/images/back_card/pink_magnolia_flower.jpg", //CARD 5
-    "./assets/images/back_card/pink_tulip.jpg", //CARD 6
-    "./assets/images/back_card/white_daisy.jpg", //CARD 7
-    "./assets/images/back_card/yellow_bird.jpg", //CARD 8
-    "./assets/images/back_card/pink_butterfly.jpg", //CARD 9
-    "./assets/images/back_card/spring_fox.jpg", //CARD 10
-    "./assets/images/back_card/orange_cat.jpg", //CARD 11
-    "./assets/images/back_card/bumble_bee.jpg", //CARD 12
-    "./assets/images/back_card/field_cat.jpg", //CARD 13
-    "./assets/images/back_card/wisteria_flower.jpg", //CARD 14
-    "./assets/images/back_card/wild_bunny.jpg", //CARD 15
-    "./assets/images/back_card/lady_bug.jpg", //CARD 16
-    "./assets/images/back_card/field_dog.jpg", //CARD 17
-    "./assets/images/back_card/hum_bird.jpg", //CARD 18 
+  "./assets/images/back_card/purple_flower.jpg",
+  "./assets/images/back_card/geese_bird.jpg",
+  "./assets/images/back_card/cherry_blossom.jpg",
+  "./assets/images/back_card/monarch_butterfly.jpg",
+  "./assets/images/back_card/pink_magnolia_flower.jpg",
+  "./assets/images/back_card/pink_tulip.jpg",
+  "./assets/images/back_card/white_daisy.jpg",
+  "./assets/images/back_card/yellow_bird.jpg",
+  "./assets/images/back_card/pink_butterfly.jpg",
+  "./assets/images/back_card/spring_fox.jpg",
+  "./assets/images/back_card/orange_cat.jpg",
+  "./assets/images/back_card/bumble_bee.jpg",
+  "./assets/images/back_card/field_cat.jpg",
+  "./assets/images/back_card/wisteria_flower.jpg",
+  "./assets/images/back_card/wild_bunny.jpg",
+  "./assets/images/back_card/lady_bug.jpg",
+  "./assets/images/back_card/field_dog.jpg",
+  "./assets/images/back_card/hum_bird.jpg",
 ];
 
-//SOUNDS
-
+// SOUNDS
 const flipSound = new Audio("./assets/sound_effects/flip.mp3");
 const matchSound = new Audio("./assets/sound_effects/match.mp3");
 const wrongSound = new Audio("./assets/sound_effects/wrong.mp3");
 
-
-
-
-
-//DOM 
+// DOM
 const board = document.getElementById("gameBoard");
 const movesDisplay = document.getElementById("moves");
+const totalMovesDisplay = document.getElementById("totalMoves");
 const timeDisplay = document.getElementById("time");
 const difficultySelect = document.getElementById("difficulty");
 const newGameBtn = document.getElementById("newGameBtn");
 
-//GAME STATE
+// GAME STATE
 let firstCard = null;
 let secondCard = null;
 let lockBoard = false;
@@ -48,9 +44,18 @@ let matchedPairs = 0;
 let timer = null;
 let seconds = 0;
 
-//Functionality
+// SESSION KEY FOR THIS TAB
+function sessionKey(key) {
+  if (!sessionStorage.getItem("tabID")) {
+    sessionStorage.setItem("tabID", Date.now() + "-" + Math.random());
+  }
+  return sessionStorage.getItem("tabID") + "-" + key;
+}
+
+// SHUFFLE ARRAY
 const shuffle = array => [...array].sort(() => Math.random() - 0.5);
-//Card creation
+
+// CREATE CARD
 function createCard(backImage) {
   const card = document.createElement("div");
   card.classList.add("card");
@@ -66,34 +71,33 @@ function createCard(backImage) {
     </div>
   `;
 
-  card.addEventListener("click", () => handleCardClick(card, backImage));
+  card.addEventListener("click", () => {
+    handleCardClick(card, backImage);
+    saveCardState();
+  });
+
   return card;
 }
 
-
-
-
-//Event handle
+// HANDLE CARD CLICK
 function handleCardClick(card, image) {
-    if (lockBoard || card === firstCard?.card || card.classList.contains("matched")) return;
+  if (lockBoard || card === firstCard?.card || card.classList.contains("matched")) return;
 
-    card.classList.add("flip");
-    flipSound.currentTime = 0; 
-    flipSound.play(); 
+  card.classList.add("flip");
+  flipSound.currentTime = 0; 
+  flipSound.play(); 
 
-    if (!firstCard) {
-        firstCard = { card, image };
-        return;
-    }
+  if (!firstCard) {
+    firstCard = { card, image };
+    return;
+  }
 
-    secondCard = { card, image };
-    moves++;
-    movesDisplay.textContent = moves;
-
-    checkMatch();
+  secondCard = { card, image };
+  incrementMoves();
+  checkMatch();
 }
 
-//Game Logic
+// CHECK MATCH
 function checkMatch() {
   if (firstCard.image === secondCard.image) {
     firstCard.card.classList.add("matched");
@@ -125,30 +129,101 @@ function resetTurn() {
   [firstCard, secondCard, lockBoard] = [null, null, false];
 }
 
-//Timer
+// INCREMENT MOVES
+function incrementMoves() {
+  moves++;
+  movesDisplay.textContent = moves;
+  sessionStorage.setItem(sessionKey("moves"), moves);
+
+  // total moves across all tabs
+  let totalMoves = Number(localStorage.getItem("totalMoves") || 0);
+  totalMoves++;
+  localStorage.setItem("totalMoves", totalMoves);
+  totalMovesDisplay.textContent = totalMoves;
+}
+
+// SAVE / RESTORE CARD STATE
+function saveCardState() {
+  const state = Array.from(board.children).map(card => ({
+    image: card.querySelector(".card-back img").src,
+    flipped: card.classList.contains("flip"),
+    matched: card.classList.contains("matched")
+  }));
+  sessionStorage.setItem(sessionKey("cards"), JSON.stringify(state));
+}
+
+function restoreCardState() {
+  const saved = JSON.parse(sessionStorage.getItem(sessionKey("cards")) || "[]");
+  saved.forEach((data, i) => {
+    const card = board.children[i];
+    if (!card) return;
+    if (data.flipped) card.classList.add("flip");
+    if (data.matched) card.classList.add("matched");
+    if (data.matched) matchedPairs++;
+  });
+}
+
+// TIMER
 function startTimer() {
   clearInterval(timer);
-  seconds = 0;
-
   timer = setInterval(() => {
     seconds++;
-    const min = String(Math.floor(seconds / 60)).padStart(2, "0");
-    const sec = String(seconds % 60).padStart(2, "0");
-    timeDisplay.textContent = `${min}:${sec}`;
+    updateTimerDisplay();
+    sessionStorage.setItem(sessionKey("timer"), seconds);
   }, 1000);
 }
 
-//New game
+function updateTimerDisplay() {
+  const min = String(Math.floor(seconds / 60)).padStart(2, "0");
+  const sec = String(seconds % 60).padStart(2, "0");
+  timeDisplay.textContent = `${min}:${sec}`;
+}
+
+function restoreTimer() {
+  const saved = Number(sessionStorage.getItem(sessionKey("timer")) || 0);
+  seconds = saved;
+  updateTimerDisplay();
+  startTimer();
+}
+
+// RESTORE MOVES
+function restoreMoves() {
+  moves = Number(sessionStorage.getItem(sessionKey("moves")) || 0);
+  movesDisplay.textContent = moves;
+}
+
+function restoreTotalMoves() {
+  const total = Number(localStorage.getItem("totalMoves") || 0);
+  totalMovesDisplay.textContent = total;
+}
+
+// LISTEN TO TOTAL MOVES IN OTHER TABS
+window.addEventListener("storage", e => {
+  if (e.key === "totalMoves") {
+    totalMovesDisplay.textContent = e.newValue;
+  }
+});
+
+// SAVE DIFFICULTY
+difficultySelect.addEventListener("change", () => {
+  sessionStorage.setItem(sessionKey("difficulty"), difficultySelect.value);
+  startGame();
+});
+
+// START GAME
 function startGame() {
+  // Restore difficulty for this tab
+  const savedDifficulty = sessionStorage.getItem(sessionKey("difficulty"));
+  if (savedDifficulty) difficultySelect.value = savedDifficulty;
+
   board.innerHTML = "";
-  moves = 0;
   matchedPairs = 0;
-  movesDisplay.textContent = "0";
-  timeDisplay.textContent = "00:00";
+
+  restoreMoves();
+  restoreTotalMoves();
 
   const size = Number(difficultySelect.value);
   board.style.gridTemplateColumns = `repeat(${size}, max-content)`;
-
 
   const totalPairs = (size * size) / 2;
   const selectedImages = BACK_IMAGES.slice(0, totalPairs);
@@ -156,12 +231,12 @@ function startGame() {
 
   cards.forEach(image => board.appendChild(createCard(image)));
 
-  startTimer();
+  restoreCardState();
+  restoreTimer();
 }
-//Listeners
+
+// EVENT LISTENERS
 newGameBtn.addEventListener("click", startGame);
-difficultySelect.addEventListener("change", startGame);
 
-// init
-
+// INIT
 startGame();
