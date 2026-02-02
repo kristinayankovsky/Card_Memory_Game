@@ -204,11 +204,6 @@ window.addEventListener("storage", e => {
   }
 });
 
-// SAVE DIFFICULTY
-difficultySelect.addEventListener("change", () => {
-  sessionStorage.setItem(sessionKey("difficulty"), difficultySelect.value);
-});
-
 // GET OR CREATE CARD ORDER
 function getCardOrder(size) {
   const key = sessionKey("cardOrder");
@@ -238,21 +233,39 @@ function startGame() {
   restoreTotalMoves();
 
   const size = Number(difficultySelect.value);
-  board.style.gridTemplateColumns = `repeat(${size}, max-content)`;
+  board.style.gridTemplateColumns = `repeat(${size}, auto)`; // keep your CSS widths
 
-  const cards = getCardOrder(size); // get same shuffled cards
+  const cards = getCardOrder(size);
   cards.forEach(image => board.appendChild(createCard(image)));
 
   restoreCardState();
   restoreTimer();
 }
 
+// DIFFICULTY CHANGE 
+difficultySelect.addEventListener("change", () => {
+  const currentDifficulty = difficultySelect.value;
+  const prevDifficulty = sessionStorage.getItem(sessionKey("prevDifficulty"));
+
+  if (currentDifficulty !== prevDifficulty) {
+    sessionStorage.setItem(sessionKey("prevDifficulty"), currentDifficulty);
+    sessionStorage.removeItem(sessionKey("cardOrder")); // reshuffle for new difficulty
+    sessionStorage.removeItem(sessionKey("cards"));     // reset flipped/matched cards
+    sessionStorage.removeItem(sessionKey("moves"));     // reset moves
+    sessionStorage.removeItem(sessionKey("timer"));     // reset timer
+    seconds = 0;
+    moves = 0;
+  }
+
+  startGame(); // rebuild board immediately
+});
+
 // NEW GAME BUTTON
 newGameBtn.addEventListener("click", () => {
   sessionStorage.removeItem(sessionKey("cardOrder")); // force reshuffle
-  sessionStorage.removeItem(sessionKey("moves")); // reset moves
-  sessionStorage.removeItem(sessionKey("cards")); // reset card states
-  sessionStorage.removeItem(sessionKey("timer")); // reset timer
+  sessionStorage.removeItem(sessionKey("cards"));     // reset flipped/matched
+  sessionStorage.removeItem(sessionKey("moves"));     // reset moves
+  sessionStorage.removeItem(sessionKey("timer"));     // reset timer
   seconds = 0;
   moves = 0;
   startGame();
