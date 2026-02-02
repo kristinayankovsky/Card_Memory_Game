@@ -207,8 +207,23 @@ window.addEventListener("storage", e => {
 // SAVE DIFFICULTY
 difficultySelect.addEventListener("change", () => {
   sessionStorage.setItem(sessionKey("difficulty"), difficultySelect.value);
-  startGame();
 });
+
+// GET OR CREATE CARD ORDER
+function getCardOrder(size) {
+  const key = sessionKey("cardOrder");
+  let savedOrder = JSON.parse(sessionStorage.getItem(key) || "null");
+
+  if (!savedOrder) {
+    const totalPairs = (size * size) / 2;
+    const selectedImages = BACK_IMAGES.slice(0, totalPairs);
+    const cards = shuffle([...selectedImages, ...selectedImages]);
+    sessionStorage.setItem(key, JSON.stringify(cards));
+    savedOrder = cards;
+  }
+
+  return savedOrder;
+}
 
 // START GAME
 function startGame() {
@@ -225,18 +240,23 @@ function startGame() {
   const size = Number(difficultySelect.value);
   board.style.gridTemplateColumns = `repeat(${size}, max-content)`;
 
-  const totalPairs = (size * size) / 2;
-  const selectedImages = BACK_IMAGES.slice(0, totalPairs);
-  const cards = shuffle([...selectedImages, ...selectedImages]);
-
+  const cards = getCardOrder(size); // get same shuffled cards
   cards.forEach(image => board.appendChild(createCard(image)));
 
   restoreCardState();
   restoreTimer();
 }
 
-// EVENT LISTENERS
-newGameBtn.addEventListener("click", startGame);
+// NEW GAME BUTTON
+newGameBtn.addEventListener("click", () => {
+  sessionStorage.removeItem(sessionKey("cardOrder")); // force reshuffle
+  sessionStorage.removeItem(sessionKey("moves")); // reset moves
+  sessionStorage.removeItem(sessionKey("cards")); // reset card states
+  sessionStorage.removeItem(sessionKey("timer")); // reset timer
+  seconds = 0;
+  moves = 0;
+  startGame();
+});
 
 // INIT
 startGame();
